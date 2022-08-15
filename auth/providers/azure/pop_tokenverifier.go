@@ -86,7 +86,8 @@ func (p *PoPTokenVerifier) ValidatePopToken(token string) (string, error) {
 	}
 
 	if ptoken.Headers[0].KeyID == "" {
-		return "", errors.Errorf("No KeyID found in PoP token header")
+		// TODO ignore
+		// return "", errors.Errorf("No KeyID found in PoP token header")
 	}
 
 	if ptoken.Headers[0].Algorithm != algoRS256 {
@@ -133,6 +134,16 @@ func (p *PoPTokenVerifier) ValidatePopToken(token string) (string, error) {
 		}
 	} else {
 		return "", errors.Errorf("Invalid token. 'u' claim is missing")
+	}
+
+	// extract cnf from claims["at"]
+	at, err := jwt.ParseSigned(claims["at"].(string))
+	if err != nil {
+		return "", errors.Errorf("Could not parse claims['at']. Error: %+v", err)
+	}
+	err = at.UnsafeClaimsWithoutVerification(&claims)
+	if err != nil {
+		return "", errors.Errorf("Cannot deserializes the claims from the claims['at'] field. Error: %+v", err)
 	}
 
 	// "cnf" (confirmation) claim used to cryptographically confirm
